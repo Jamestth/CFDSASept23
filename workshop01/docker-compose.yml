@@ -1,0 +1,14 @@
+version: '3'
+services:
+  backend:
+    build: ./backend/
+    volumes:
+      - ${PWD}/models/:/models 
+    restart: always
+  frontend:
+    build: ./frontend/
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
