@@ -8,7 +8,7 @@ function App() {
   const [quote, setQuote] = useState('');
 
   useEffect(() => {
-    const apiUrl = 'http://localhost/api/random-quote';
+    const apiUrl = '/api/random-quote';
 
     // Fetch data from the API.
     fetch(apiUrl)
