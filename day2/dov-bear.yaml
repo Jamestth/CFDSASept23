@@ -1,0 +1,37 @@
+# k port-forward po/my-pod 8080:3000 -nmyns
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dov-po
+  namespace: myns
+  labels:
+    app: dev
+spec:
+  containers:
+    - name: dov-container
+      image: chukmunnlee/dov-bear:v4
+      imagePullPolicy: IfNotPresent # What to do when pulling image?
+      ports: 
+        # Expose
+        - containerPort: 3000
+      env:
+        - name: INSTANCE_NAME
+          value: Helloelephant  
+        - name: INSTANCE_HASH
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        # - name: INSTANCE_HOST
+          # value: "3000"
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: 3000
+      resources:
+        limits:
+          memory: 512Mi
+          cpu: "1"
+        requests:
+          memory: 256Mi
+          cpu: "0.2"
+

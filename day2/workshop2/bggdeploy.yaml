@@ -1,0 +1,108 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bgg-backend-deployment
+  namespace: bggns
+  labels:
+    name: bggapp-po
+    app: bgg
+    tied: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      name: bggapp-po
+      app: bgg
+      tied: backend
+  template:
+    metadata:
+      name: bggapp-po
+      labels:
+        name: bggapp-po
+        app: bgg
+        tied: backend
+    spec:
+      containers:
+        - name: bggapp-container
+          image: stackupiss/bgg-backend:v2
+          imagePullPolicy: IfNotPresent # What to do when pulling image?
+          ports: 
+            # Expose
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: bgg-cm
+            - secretRef:
+                name: bgg-secret
+          # env:
+          #   - name: BGG_DB_USER
+          #     valueFrom: 
+          #       configMapKeyRef:
+          #         name: bgg-cm
+          #         key: BGG_DB_USER
+          #   - name: BGG_DB_HOST
+          #     valueFrom: 
+          #       configMapKeyRef:
+          #         name: bgg-cm
+          #         key: BGG_DB_HOST
+          #   - name: BGG_DB_PASSWORD
+          #     valueFrom: 
+          #       secretKeyRef:
+          #         name: bgg-secret
+          #         key: BGG_DB_PASSWORD
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+          # readinessProbe:
+          #   httpGet:
+          #     path: /healthz
+          #     port: 3000
+          #   initialDelaySeconds: 30
+          #   timeoutSeconds: 5
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+            requests:
+              memory: 256Mi
+              cpu: "0.2"
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: bggapp-svc
+#   namespace: bggns
+#   labels:
+#     name: bggapp-svc
+#     app: bgg
+#     tied: backend
+# spec:
+#   type: NodePort
+#   selector:
+#     name: bggapp-po
+#     app: bgg
+#     tied: backend
+#   ports: 
+#     - port: 8080
+#       targetPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bggapp-svc
+  namespace: bggns
+  labels:
+    name: bggapp-svc
+    app: bgg
+    tied: backend
+spec:
+  type: LoadBalancer
+  selector:
+    name: bggapp-po
+    app: bgg
+    tied: backend
+  ports: 
+    - port: 80
+      targetPort: 3000

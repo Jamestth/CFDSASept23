@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bggdb-deployment
+  namespace: bggns
+  labels:
+    app: bgg
+    dept: BIZ
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: bggdb-po
+      app: bgg
+      tied: database
+  template:
+    metadata:
+      name: bggdb-po
+      labels:
+        name: bggdb-po
+        app: bgg
+        tied: database
+    spec:
+      volumes:
+        - name: data-vol
+          persistentVolumeClaim:
+            claimName: bggdb-pvc
+        - name: config-vol
+          configMap:
+            name: bgg-cm
+        - name: tmp-vol
+          emptyDir: {}
+      containers:
+        - name: bggdb-container
+          image: stackupiss/bgg-database:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: data-vol
+              mountPath: /var/lib/mysql
+            - name: config-vol
+              mountPath: /opt/config
+            - name: tmp-vol
+              mountPath: /opt/tmp
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: "1"
+            requests:
+              memory: 256Mi
+              cpu: "0.2"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bggdb-svc
+  namespace: bggns
+spec:
+  type: ClusterIP
+  selector:
+    name: bggdb-po
+    app: bgg
+    tied: database
+  ports:
+    - port: 3306
+      targetPort: 3306

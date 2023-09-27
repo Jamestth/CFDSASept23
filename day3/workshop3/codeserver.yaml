@@ -1,0 +1,99 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codeserver-deployment
+  namespace: codeserverns
+  labels:
+    name: codeserverapp-po
+    app: codeserver
+    tier: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: codeserverapp-po
+      app: codeserver
+      tier: app
+  template:
+    metadata:
+      name: codeserverapp-po
+      labels:
+        name: codeserverapp-po
+        app: codeserver
+        tier: app
+    spec:
+      volumes:
+        - name: data-vol
+          persistentVolumeClaim:
+            claimName: codeserver-pvc
+        # - name: config-vol
+        #   configMap:
+        #     name: codeserver-cm
+      containers:
+        - name: codeserverapp-container
+          image: linuxserver/code-server:amd64-4.17.0
+          imagePullPolicy: IfNotPresent # What to do when pulling image?
+          ports: 
+            # Expose
+            - containerPort: 8443
+          envFrom:
+            - configMapRef:
+                name: codeserver-cm
+            - secretRef:
+                name: codeserver-secret
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: "200m"
+            requests:
+              memory: 256Mi
+              cpu: "200m"
+          volumeMounts:
+            - name: data-vol
+              mountPath: /config/workspace
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: codeserverapp-svc
+  namespace: codeserverns
+  labels:
+    name: codeserverapp-svc
+    app: codeserver
+    tier: app
+spec:
+  type: LoadBalancer
+  selector:
+    name: codeserverapp-po
+    app: codeserver
+    tier: app
+  ports: 
+    - port: 8443
+      targetPort: 8443
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.org/proxy-connect-timeout: "30s"
+    nginx.org/proxy-read-timeout: "20s"
+  name: codeserverapp-ing
+  namespace: codeserverns
+  labels:
+    app: codeserverapp
+    name: codeserverapp-ing
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: code-167.172.6.138.nip.io
+    http:
+      paths:
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+            name: codeserverapp-svc
+            port: 
+              number: 8443
