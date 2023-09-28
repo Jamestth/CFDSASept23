@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - dov-bear-deploy.yaml
+  - dov-bear.yaml
+  - dovns.yaml
+
+

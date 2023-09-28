@@ -1,0 +1,153 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minions
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-hsvc
+  namespace: minions
+  labels:
+    app: minio
+    name: minio-hsvc
+spec:
+  clusterIP: None
+  selector:
+    app: minio
+    name: minio-po
+  ports:
+  - name: data 
+    port: 9000
+    targetPort: 9000
+  - name: console
+    port: 9090
+    targetPort: 9090
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-svc
+  namespace: minions
+  labels:
+    app: minio
+    name: minio-hsvc
+spec:
+  type: ClusterIP
+  selector:
+    app: minio
+    name: minio-po
+  ports:
+  - name: data 
+    port: 9000
+    targetPort: 9000
+  - name: console
+    port: 9090
+    targetPort: 9090
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: minio-ing
+  namespace: minions
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: data-167.172.6.138.nip.io
+    http:
+      paths:
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+            name: minio-svc
+            port: 
+              number: 9000
+  - host: console-167.172.6.138.nip.io
+    http:
+      paths:
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+            name: minio-svc
+            port: 
+              number: 9090
+
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio-sts
+  namespace: minions
+spec:
+  replicas: 4
+  serviceName: minio-svc
+  volumeClaimTemplates:
+  - metadata:
+      name: data-vol
+    spec:
+      accessModes: [ ReadWriteOnce ]
+      storageClassName: do-block-storage 
+      resources:
+        requests:
+          storage: 1Gi
+  selector:
+    matchLabels:
+      name: minio-po
+  template:
+    metadata:
+      labels:
+        name: minio-po
+    spec:
+      containers:
+      - name: minio-container
+        image: bitnami/minio:2023.9.23
+        imagePullPolicy: IfNotPresent
+        command:
+        - minio
+        - server 
+        - --address=:9000
+        - --console-address=:9090
+        - http://minio-sts-{0...2}.minio-hsvc.minio-ns.svc.cluster.local/data
+        env:
+          - name: MINIO_ROOT_USER
+            value: admin 
+          - name: MINIO_ROOT_PASSWORD
+            value: abc12345678
+          - name: BITNAMI_DEBUG
+            value: "true"
+        ports:
+        - name: data
+          containerPort: 9000
+        - name: console
+          containerPort: 9090
+        volumeMounts:
+        - name: data-vol
+          mountPath: /data
+        livenessProbe:
+          httpGet:
+            path: /minio/health/live
+            port: 9000
+          periodSeconds: 60
+        readinessProbe:
+          httpGet:
+            path: /minio/health/ready
+            port: 9000
+          periodSeconds: 60
+      initContainers:
+      - name: change-perms
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/sh
+        - -c
+        - "chmod 777 /data"
+        volumeMounts:
+        - name: data-vol
+          mountPath: /data

@@ -1,0 +1,147 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  data:
+    INSTANCE_NAME: my dov bear
+  kind: ConfigMap
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"INSTANCE_NAME":"my dov bear"},"kind":"ConfigMap","metadata":{"annotations":{},"labels":{"env":"dev"},"name":"dov-cm-676cfk467h","namespace":"dovns"}}
+    labels:
+      env: dev
+    name: dov-cm-676cfk467h
+    namespace: dovns
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"env":"dev"},"name":"dov-svc","namespace":"dovns"},"spec":{"ports":[{"port":8080,"targetPort":3000}],"selector":{"app":"dov-container","dept":"BIZ","env":"dev"},"type":"NodePort"}}
+    labels:
+      env: dev
+    name: dov-svc
+    namespace: dovns
+  spec:
+    ports:
+    - port: 8080
+      targetPort: 3000
+    selector:
+      app: dov-container
+      dept: BIZ
+      env: dev
+    type: NodePort
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"dov-container","dept":"BIZ","env":"dev"},"name":"dov-po-deployment","namespace":"dovns"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"dov-container","env":"dev"}},"template":{"metadata":{"labels":{"app":"dov-container","dept":"BIZ","env":"dev"}},"spec":{"containers":[{"env":[{"name":"INSTANCE_NAME","value":"Helloelephant"},{"name":"INSTANCE_HASH","valueFrom":{"fieldRef":{"fieldPath":"status.podIP"}}}],"image":"chukmunnlee/dov-bear:v5","imagePullPolicy":"IfNotPresent","livenessProbe":{"httpGet":{"path":"/healthz","port":3000}},"name":"dov-container","ports":[{"containerPort":3000}],"resources":{"limits":{"cpu":"1","memory":"512Mi"},"requests":{"cpu":"0.2","memory":"256Mi"}}}]}}}}
+    labels:
+      app: dov-container
+      dept: BIZ
+      env: dev
+    name: dov-po-deployment
+    namespace: dovns
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: dov-container
+        env: dev
+    template:
+      metadata:
+        labels:
+          app: dov-container
+          dept: BIZ
+          env: dev
+      spec:
+        containers:
+        - env:
+          - name: INSTANCE_NAME
+            value: Helloelephant
+          - name: INSTANCE_HASH
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          image: chukmunnlee/dov-bear:v5
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+          name: dov-container
+          ports:
+          - containerPort: 3000
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+            requests:
+              cpu: "0.2"
+              memory: 256Mi
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"nginx.org/proxy-connect-timeout":"30s","nginx.org/proxy-read-timeout":"20s"},"labels":{"app":"dov","env":"dev","name":"dov-ing"},"name":"dov-ing","namespace":"dovns"},"spec":{"ingressClassName":"nginx","rules":[{"host":"dev-dov-167.172.6.138.nip.io","http":{"paths":[{"backend":{"service":{"name":"dov-svc","port":{"number":8080}}},"path":"/","pathType":"Prefix"}]}}]}}
+      nginx.org/proxy-connect-timeout: 30s
+      nginx.org/proxy-read-timeout: 20s
+    labels:
+      app: dov
+      env: dev
+      name: dov-ing
+    name: dov-ing
+    namespace: dovns
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: dev-dov-167.172.6.138.nip.io
+      http:
+        paths:
+        - backend:
+            service:
+              name: dov-svc
+              port:
+                number: 8080
+          path: /
+          pathType: Prefix
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","kind":"Pod","metadata":{"annotations":{},"labels":{"app":"dev","env":"dev"},"name":"dov-po","namespace":"dovns"},"spec":{"containers":[{"env":[{"name":"INSTANCE_NAME","value":"Helloelephant"},{"name":"INSTANCE_HASH","valueFrom":{"fieldRef":{"fieldPath":"status.podIP"}}}],"image":"chukmunnlee/dov-bear:v5","imagePullPolicy":"IfNotPresent","livenessProbe":{"httpGet":{"path":"/healthz","port":3000}},"name":"dov-container","ports":[{"containerPort":3000}],"resources":{"limits":{"cpu":"1","memory":"512Mi"},"requests":{"cpu":"0.2","memory":"256Mi"}}}]}}
+    labels:
+      app: dev
+      env: dev
+    name: dov-po
+    namespace: dovns
+  spec:
+    containers:
+    - env:
+      - name: INSTANCE_NAME
+        value: Helloelephant
+      - name: INSTANCE_HASH
+        valueFrom:
+          fieldRef:
+            fieldPath: status.podIP
+      image: chukmunnlee/dov-bear:v5
+      imagePullPolicy: IfNotPresent
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: 3000
+      name: dov-container
+      ports:
+      - containerPort: 3000
+      resources:
+        limits:
+          cpu: "1"
+          memory: 512Mi
+        requests:
+          cpu: "0.2"
+          memory: 256Mi
+kind: List
+metadata: {}

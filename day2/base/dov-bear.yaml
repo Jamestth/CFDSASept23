@@ -1,9 +1,9 @@
-# k port-forward po/my-pod 8080:3000 -nmyns
+# k port-forward po/my-pod 8080:3000 -ndovns
 apiVersion: v1
 kind: Pod
 metadata:
   name: dov-po
-  namespace: myns
+  namespace: dovns
   labels:
     app: dev
 spec:
